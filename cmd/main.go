@@ -3,20 +3,24 @@ package main
 import (
 	"log"
 	"net/http"
-    "encoding/json"
+    "gitbook/app"
 )
 
 
+func muxWrap(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        next.ServeHTTP(w, r)
+        w.Header().Add("Content-Type", "application/json")
+    })
+}
+
 func main() {
     router := http.NewServeMux()
-    router.HandleFunc("GET api/v1/", func(w http.ResponseWriter, r *http.Request) {
-        items := map[string]int{"ROUTE": 1}
-        json.NewEncoder(w).Encode(items)
-    })
+    app.RegisterRoutes(router)
 
     server := http.Server{
         Addr: ":8000",
-        Handler: router,
+        Handler: muxWrap(router),
     }
 
     log.Printf("Starting server at port %v\n", server.Addr)
