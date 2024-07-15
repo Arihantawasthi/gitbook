@@ -1,9 +1,10 @@
 package main
 
 import (
+	"gitbook/app"
+	"gitbook/app/storage"
 	"log"
 	"net/http"
-    "gitbook/app"
 )
 
 
@@ -15,6 +16,7 @@ func muxWrap(next http.Handler) http.Handler {
 }
 
 func main() {
+    storage.ConnectPGStorage()
     router := http.NewServeMux()
     app.RegisterRoutes(router)
 
