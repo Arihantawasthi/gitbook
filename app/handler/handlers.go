@@ -27,12 +27,13 @@ func (h *RepoHandler) GetAllRepos(w http.ResponseWriter, r *http.Request) error 
     h.logger.Info("incoming request", "handler: GetAllRepos", r.Method, r.URL.Path, r.UserAgent(), r.Body)
 	repoList, err := h.svc.GetRepoList(h.repoPath)
 	if err != nil {
-        h.logger.Info(err.Error(), "handler: GetAllRepos", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+        h.logger.Info(err.Error(), "handler: GetRepoList", r.Method, r.URL.Path, r.UserAgent(), r.Body)
 		return utils.RaiseHTTPError("cannot read the git server directory", http.StatusServiceUnavailable)
 	}
 
 	response, err := h.svc.GetRepoDetails(h.repoPath, repoList)
 	if err != nil {
+        h.logger.Info(err.Error(), "handler: GetRepoDetails", r.Method, r.URL.Path, r.UserAgent(), r.Body)
 		return utils.RaiseHTTPError("skill issues", http.StatusServiceUnavailable)
 	}
 
