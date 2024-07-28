@@ -3,9 +3,10 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"gitbook/app/types"
 	"net/http"
-    "os/exec"
-    "strings"
+	"os/exec"
+	"strings"
 )
 
 type HTTPError struct {
@@ -17,7 +18,7 @@ func (e HTTPError) Error() string {
 	return fmt.Sprintf("api error: %d", e.StatusCode)
 }
 
-func RaiseHTTPError(err error, msg string, statusCode int) HTTPError {
+func RaiseHTTPError(msg string, statusCode int) HTTPError {
 	return HTTPError{
 		StatusCode: statusCode,
 		Msg:        msg,
@@ -30,7 +31,13 @@ func HandlerWrapper(a APIFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := a(w, r); err != nil {
 			if apiError, ok := err.(HTTPError); ok {
-				WriteJson(w, apiError.StatusCode, apiError)
+                jsonResponse := types.JsonResponse[map[string]string]{
+                    RequestStatus: 0,
+                    StatusCode: apiError.StatusCode,
+                    Msg: apiError.Msg,
+                    Data: map[string]string{},
+                }
+				WriteJson(w, apiError.StatusCode, jsonResponse)
 			}
 		}
 	}
@@ -41,7 +48,6 @@ func WriteJson(w http.ResponseWriter, statusCode int, v any) {
 	w.WriteHeader(statusCode)
 	json.NewEncoder(w).Encode(v)
 }
-
 
 func RunCommand(cmdName string, args ...string) (string, error) {
 	cmd := exec.Command(cmdName, args...)

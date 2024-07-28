@@ -42,7 +42,7 @@ func ConnectPGStorage() {
     if pingErr := conn.Ping(); pingErr != nil {
         log.Fatalf("ERROR PINGING DATABASE: %v\n", pingErr)
     }
-    log.Printf("Connection to database established: %v\n", pgConfig.Name)
+    log.Printf("connection to database established: %v\n", pgConfig.Name)
 
     DBConn = conn
 }

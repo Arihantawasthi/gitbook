@@ -25,6 +25,6 @@ func main() {
         Handler: router,
     }
 
-    log.Printf("Starting server at port %v\n", server.Addr)
+    log.Printf("starting server at port %v\n", server.Addr)
     log.Fatal(server.ListenAndServe())
 }

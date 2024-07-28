@@ -22,8 +22,8 @@ func (s *RepoService) GetRepoList(repoPath string) ([]string, error) {
 	return lines, nil
 }
 
-func (s *RepoService) GetRepoDetails(repoPath string, repoList []string) ([]types.RepoResponse, error) {
-	var repoDetails []types.RepoResponse
+func (s *RepoService) GetRepoDetails(repoPath string, repoList []string) ([]types.RepoDetails, error) {
+	var repoDetails []types.RepoDetails
 	for _, name := range repoList {
 		descPath := fmt.Sprintf("%s/%s/description", repoPath, name)
 		desc, err := utils.RunCommand("cat", descPath)
@@ -36,7 +36,7 @@ func (s *RepoService) GetRepoDetails(repoPath string, repoList []string) ([]type
 		}
 		repoDetails = append(
 			repoDetails,
-			types.RepoResponse{
+			types.RepoDetails{
 				Name:         strings.TrimSuffix(name, ".git"),
 				Desc:         desc,
 				Author:       commitSummary["author"],
