@@ -2,8 +2,8 @@ package app
 
 import (
 	"gitbook/app/handler"
+	"gitbook/utils"
 	"net/http"
-    "gitbook/utils"
 )
 
 func RegisterRoutes(router *http.ServeMux) {
