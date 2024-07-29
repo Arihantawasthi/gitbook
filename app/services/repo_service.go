@@ -42,9 +42,37 @@ func (s *RepoService) GetRepoDetails(repoPath string, repoList []string) ([]type
 				Author:       commitSummary["author"],
 				CreatedAt:    commitSummary["firstCommit"],
 				LastCommitAt: commitSummary["lastCommit"],
-			})
+			},
+        )
 	}
 	return repoDetails, nil
+}
+
+func (s *RepoService) GetRepoObjects(repoPath, repoName, branch string) ([]types.Objects, error) {
+    objects := []types.Objects{}
+    repoDir := fmt.Sprintf("--git-dir=%s/%s.git", repoPath, repoName)
+    output, err := utils.RunCommand("git", repoDir, "ls-tree", "--format=%(objecttype)|%(path)", branch)
+    if err != nil {
+        return nil, err
+    }
+    objectList := strings.Split(output, "\n")
+    for _, object := range objectList {
+        objectSplit := strings.Split(object, "|")
+        objects = append(objects, types.Objects{Type: objectSplit[0], Path: objectSplit[1]})
+    }
+
+    return objects, nil
+}
+
+
+func (s *RepoService) GetRepoBranches(repoPath, repoName string) ([]string, error) {
+    repoDir := fmt.Sprintf("--git-dir=%s/%s.git", repoPath, repoName)
+    output, err := utils.RunCommand("git", repoDir, "for-each-ref", "--format=%(refname:short)", "refs/heads")
+    if err != nil {
+        return nil, err
+    }
+    branches := strings.Split(output, "\n")
+    return branches, nil
 }
 
 func getFirstCommitAndAuthor(repoPath, name string) (map[string]string, error) {
