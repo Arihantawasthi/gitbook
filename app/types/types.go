@@ -14,3 +14,15 @@ type JsonResponse[T any] struct {
 	Msg           string `json:"message"`
 	Data          T      `json:"data"`
 }
+
+type RepoObjects struct {
+	Name     string    `json:"name"`
+	Desc     string    `json:"desc"`
+	Branches []string  `json:"branches"`
+	Data     []Objects `json:"objects"`
+}
+
+type Objects struct {
+	Type string `json:"type"`
+	Path string `json:"path"`
+}
