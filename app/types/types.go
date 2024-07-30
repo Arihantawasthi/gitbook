@@ -20,9 +20,12 @@ type RepoObjects struct {
 	Desc     string    `json:"desc"`
 	Branches []string  `json:"branches"`
 	Data     []Objects `json:"objects"`
+    Blob     []string  `json:"blob"`
 }
 
 type Objects struct {
-	Type string `json:"type"`
-	Path string `json:"path"`
+	Type     string `json:"type"`
+	FullPath string `json:"fullPath"`
+	Path     string `json:"path"`
+	Size     string `json:"size"`
 }

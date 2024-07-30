@@ -35,7 +35,7 @@ func (h *RepoHandler) GetAllRepos(w http.ResponseWriter, r *http.Request) error 
 	response, err := h.svc.GetRepoDetails(h.repoPath, repoList)
 	if err != nil {
 		h.logger.Error(err.Error(), "repo_service: GetRepoDetails", r.Method, r.URL.Path, r.UserAgent(), r.Body)
-        return utils.RaiseHTTPError("skill issues: cannot fetch repo details", http.StatusServiceUnavailable)
+		return utils.RaiseHTTPError("skill issues: cannot fetch repo details", http.StatusServiceUnavailable)
 	}
 
 	jsonResponse := types.JsonResponse[[]types.RepoDetails]{
@@ -51,30 +51,39 @@ func (h *RepoHandler) GetAllRepos(w http.ResponseWriter, r *http.Request) error 
 
 func (h *RepoHandler) GetRepoObjects(w http.ResponseWriter, r *http.Request) error {
 	h.logger.Info("incoming request", "handler: GetRepoObjects", r.Method, r.URL.Path, r.UserAgent(), r.Body)
-    var repoObjects types.RepoObjects
-    repoName := r.PathValue("name")
+	var repoObjects types.RepoObjects
+	repoName := r.PathValue("name")
+	objectType := r.PathValue("type")
+    repoDir := fmt.Sprintf("--git-dir=%s/%s.git", h.repoPath, repoName)
+	path := utils.ExtractRepoPath(r.URL.Path)
 
-    objects, err := h.svc.GetRepoObjects(h.repoPath, repoName, r.PathValue("branch"))
-    if err != nil {
-        h.logger.Error(err.Error(), "repo_service: GetRepoObjects", r.Method, r.URL.Path, r.UserAgent(), r.Body)
-        return utils.RaiseHTTPError("skill issues: not able to read objects", http.StatusServiceUnavailable)
-    }
+	objects, err := h.svc.GetRepoObjects(repoDir, r.PathValue("branch"), path)
+	if err != nil {
+		h.logger.Error(err.Error(), "repo_service: GetRepoObjects", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+		return utils.RaiseHTTPError("skill issues: not able to read objects", http.StatusServiceUnavailable)
+	}
 
-    branches, err := h.svc.GetRepoBranches(h.repoPath, repoName)
-    if err != nil {
-        h.logger.Error(err.Error(), "repo_service: GetRepoBranches", r.Method, r.URL.Path, r.UserAgent(), r.Body)
-        return utils.RaiseHTTPError("skill issues: not able to read branches", http.StatusServiceUnavailable)
-    }
+	branches, err := h.svc.GetRepoBranches(h.repoPath, repoName)
+	if err != nil {
+		h.logger.Error(err.Error(), "repo_service: GetRepoBranches", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+		return utils.RaiseHTTPError("skill issues: not able to read branches", http.StatusServiceUnavailable)
+	}
 
 	desc, err := utils.RunCommand("cat", fmt.Sprintf("%s/%s.git/description", h.repoPath, repoName))
 	if err != nil {
-        h.logger.Error(err.Error(), "handler: GetRepoObjects", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+		h.logger.Error(err.Error(), "utils: RunCommand", r.Method, r.URL.Path, r.UserAgent(), r.Body)
 		return utils.RaiseHTTPError("skill issues: not able to read description", http.StatusServiceUnavailable)
 	}
+
+    rawLines, err := h.svc.GetBlobRawLines(repoDir, r.PathValue("branch"), path, objectType)
+    if err != nil {
+        return utils.RaiseHTTPError("skill issues: not able to read blob", http.StatusServiceUnavailable)
+    }
 
 	repoObjects.Name = repoName
 	repoObjects.Desc = desc
 	repoObjects.Branches = branches
+    repoObjects.Blob = rawLines
 	repoObjects.Data = objects
 	jsonResponse := types.JsonResponse[types.RepoObjects]{
 		RequestStatus: 1,
@@ -82,8 +91,7 @@ func (h *RepoHandler) GetRepoObjects(w http.ResponseWriter, r *http.Request) err
 		Msg:           "Successfully retrieved the repository objects",
 		Data:          repoObjects,
 	}
-
-	h.logger.Info("request completed", "handler: GetRepoObjects", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+    h.logger.Info("request completed", "handler: GetRepoObjects", r.Method, r.URL.Path, r.UserAgent(), r.Body)
 	utils.WriteJson(w, http.StatusOK, jsonResponse)
 	return nil
 }

@@ -48,22 +48,27 @@ func (s *RepoService) GetRepoDetails(repoPath string, repoList []string) ([]type
 	return repoDetails, nil
 }
 
-func (s *RepoService) GetRepoObjects(repoPath, repoName, branch string) ([]types.Objects, error) {
+func (s *RepoService) GetRepoObjects(repoDir, branch, path string) ([]types.Objects, error) {
     objects := []types.Objects{}
-    repoDir := fmt.Sprintf("--git-dir=%s/%s.git", repoPath, repoName)
-    output, err := utils.RunCommand("git", repoDir, "ls-tree", "--format=%(objecttype)|%(path)", branch)
+    output, err := utils.RunCommand("git", repoDir, "ls-tree", "--format=%(objecttype)|%(path)|%(objectsize)", branch, path)
     if err != nil {
         return nil, err
     }
     objectList := strings.Split(output, "\n")
     for _, object := range objectList {
         objectSplit := strings.Split(object, "|")
-        objects = append(objects, types.Objects{Type: objectSplit[0], Path: objectSplit[1]})
+        pathParts := strings.Split(objectSplit[1], "/")
+        path := pathParts[len(pathParts)-1]
+        objects = append(objects, types.Objects{
+            Type: objectSplit[0],
+            FullPath: objectSplit[1],
+            Path: path,
+            Size: objectSplit[2],
+        })
     }
 
     return objects, nil
 }
-
 
 func (s *RepoService) GetRepoBranches(repoPath, repoName string) ([]string, error) {
     repoDir := fmt.Sprintf("--git-dir=%s/%s.git", repoPath, repoName)
@@ -73,6 +78,19 @@ func (s *RepoService) GetRepoBranches(repoPath, repoName string) ([]string, erro
     }
     branches := strings.Split(output, "\n")
     return branches, nil
+}
+
+func (s *RepoService) GetBlobRawLines(repoDir, branch, path, objectType string) ([]string, error) {
+    rawLines := []string{}
+    if objectType != "blob" {
+        return rawLines, nil
+    }
+    output, err := utils.RunCommand("git", repoDir, "show", "master:"+path)
+    if err != nil {
+        return nil, err
+    }
+    rawLines = strings.Split(output, "\n")
+    return rawLines, nil
 }
 
 func getFirstCommitAndAuthor(repoPath, name string) (map[string]string, error) {

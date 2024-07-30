@@ -58,3 +58,13 @@ func RunCommand(cmdName string, args ...string) (string, error) {
 	outputStr := strings.TrimSuffix(string(output), "\n")
 	return outputStr, nil
 }
+
+func ExtractRepoPath(path string) string {
+    parts := strings.Split(path, "/")
+    for i, part := range parts {
+        if part == "metadata" && i+2 < len(parts) {
+            return strings.Join(parts[i+2:], "/")
+        }
+    }
+    return "."
+}

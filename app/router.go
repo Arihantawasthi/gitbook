@@ -11,5 +11,5 @@ func RegisterRoutes(router *http.ServeMux) {
     repoHandler := handler.NewRepoHandler(appLogger)
 
 	router.HandleFunc("GET /api/v1/repos", utils.HandlerWrapper(repoHandler.GetAllRepos))
-    router.HandleFunc("GET /api/v1/repos/{name}/{branch}/{path}", utils.HandlerWrapper(repoHandler.GetRepoObjects))
+    router.HandleFunc("GET /api/v1/repos/{name}/{type}/metadata/{branch}/", utils.HandlerWrapper(repoHandler.GetRepoObjects))
 }
