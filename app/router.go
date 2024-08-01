@@ -13,5 +13,5 @@ func RegisterRoutes(router *http.ServeMux) {
 
 	router.HandleFunc("GET /api/v1/repos", utils.HandlerWrapper(repoHandler.GetAllRepos))
     router.HandleFunc("GET /api/v1/repos/{name}/{type}/metadata/{branch}/", utils.HandlerWrapper(repoHandler.GetRepoObjects))
-    router.HandleFunc("get /api/v1/repos/{name}/logs", utils.HandlerWrapper(commHandler.GetCommitHistory))
+    router.HandleFunc("GET /api/v1/repos/{name}/logs", utils.HandlerWrapper(commHandler.GetCommitHistory))
 }
