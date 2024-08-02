@@ -63,6 +63,10 @@ func ExtractRepoPath(path string) string {
     parts := strings.Split(path, "/")
     for i, part := range parts {
         if part == "metadata" && i+2 < len(parts) {
+            path := strings.Join(parts[i+2:], "/")
+            if path == "" {
+                return "."
+            }
             return strings.Join(parts[i+2:], "/")
         }
     }

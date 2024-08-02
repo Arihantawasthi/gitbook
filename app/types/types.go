@@ -29,3 +29,17 @@ type Objects struct {
 	Path     string `json:"path"`
 	Size     string `json:"size"`
 }
+
+type Log struct {
+	Hash      string `json:"commit_hash"`
+	Author    string `json:"commit_author"`
+	Message   string `json:"commit_message"`
+	Timestamp string `json:"commit_timestamp"`
+}
+
+type LogStat struct {
+	FilesChanged string `json:"files_changed"`
+	Deletions    string `json:"deletions"`
+	Insertions   string `json:"insertions"`
+}
+
