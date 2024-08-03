@@ -35,6 +35,7 @@ type Log struct {
 	Author    string `json:"commit_author"`
 	Message   string `json:"commit_message"`
 	Timestamp string `json:"commit_timestamp"`
+    LogStat
 }
 
 type LogStat struct {

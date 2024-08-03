@@ -25,8 +25,6 @@ func NewCommitHandler(logger utils.Logger) *CommitHandler {
 }
 
 func (h *CommitHandler) GetCommitHistory(w http.ResponseWriter, r *http.Request) error {
-	// TODOs:
-	// Implement the remaining log fields i.e. (files changed, insertions, deletions)
 	h.logger.Info("incoming request", "handler: GetCommitHistory", r.Method, r.URL.Path, r.UserAgent(), r.Body)
 	repoName := r.PathValue("name") + ".git"
 	gitDir := fmt.Sprintf("--git-dir=%s/%s", h.repoPath, repoName)

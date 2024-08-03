@@ -1,7 +1,7 @@
 package services
 
 import (
-    "gitbook/app/types"
+	"gitbook/app/types"
 	"gitbook/utils"
 	"strings"
 )
@@ -26,8 +26,53 @@ func (s *CommService) GetRepoCommits(repoPath, branch string) ([]types.Log, erro
         commitLog.Author = commitParts[1]
         commitLog.Timestamp = commitParts[2]
         commitLog.Message = commitParts[3]
+
+        commitStat, err := getShortStat(repoPath, commitLog.Hash)
+        if err != nil {
+            return commitLogList, err
+        }
+        commitLog.FilesChanged = commitStat.FilesChanged
+        commitLog.Deletions = commitStat.Deletions
+        commitLog.Insertions = commitStat.Insertions
         commitLogList = append(commitLogList, commitLog)
     }
 
     return commitLogList, nil
+}
+
+
+func getShortStat(repoPath, commitHash string) (types.LogStat, error) {
+    logStat := types.LogStat{}
+    output, err := utils.RunCommand("git", repoPath, "show", "--pretty=", "--shortstat", commitHash)
+    if err != nil {
+        return logStat, err
+    }
+    logStatParts := strings.Split(output, ",")
+    logStat = formatStat(logStatParts)
+    return logStat, nil
+}
+
+
+func formatStat(logStatParts []string) types.LogStat {
+    logStat := types.LogStat{}
+    logStat.FilesChanged = logStatParts[0]
+    logStat.Deletions = "0"
+    logStat.Insertions = "0"
+    if strings.Contains(logStatParts[1], "-") {
+        logStat.Deletions = logStatParts[1]
+    }
+    if strings.Contains(logStatParts[1], "+") {
+        logStat.Insertions = logStatParts[1]
+    }
+    if len(logStatParts) <= 2 {
+        return logStat
+    }
+    if strings.Contains(logStatParts[2], "-") {
+        logStat.Deletions = logStatParts[2]
+    }
+    if strings.Contains(logStatParts[2], "+"){
+        logStat.Insertions = logStatParts[2]
+    }
+
+    return logStat
 }
