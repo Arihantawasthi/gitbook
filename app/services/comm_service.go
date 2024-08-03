@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"gitbook/app/types"
 	"gitbook/utils"
 	"strings"
@@ -48,12 +49,13 @@ func getShortStat(repoPath, commitHash string) (types.LogStat, error) {
         return logStat, err
     }
     logStatParts := strings.Split(output, ",")
-    logStat = formatStat(logStatParts)
-    return logStat, nil
+    logStat = extractLogStat(logStatParts)
+    formattedLogStat := formatLogStat(logStat)
+    return formattedLogStat, nil
 }
 
 
-func formatStat(logStatParts []string) types.LogStat {
+func extractLogStat(logStatParts []string) types.LogStat {
     logStat := types.LogStat{}
     logStat.FilesChanged = logStatParts[0]
     logStat.Deletions = "0"
@@ -73,6 +75,22 @@ func formatStat(logStatParts []string) types.LogStat {
     if strings.Contains(logStatParts[2], "+"){
         logStat.Insertions = logStatParts[2]
     }
+
+    return logStat
+}
+
+func formatLogStat(logStat types.LogStat) types.LogStat {
+    filesChanged := strings.TrimPrefix(logStat.FilesChanged, " ")
+    deletions := strings.TrimPrefix(logStat.Deletions, " ")
+    insertions := strings.TrimPrefix(logStat.Insertions, " ")
+
+    filesChangedParts := strings.Split(filesChanged, " ")
+    insertionsParts := strings.Split(deletions, " ")
+    deletionsParts := strings.Split(insertions, " ")
+
+    logStat.FilesChanged = filesChangedParts[0]
+    logStat.Insertions = insertionsParts[0]
+    logStat.Deletions = deletionsParts[0]
 
     return logStat
 }
