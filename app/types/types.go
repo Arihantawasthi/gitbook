@@ -44,3 +44,7 @@ type LogStat struct {
 	Insertions   string `json:"insertions"`
 }
 
+type DiffResponse struct {
+	FilePath  string
+	CodeLines []string
+}

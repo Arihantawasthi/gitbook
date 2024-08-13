@@ -41,12 +41,29 @@ func (s *CommService) GetRepoCommits(repoPath, branch string) ([]types.Log, erro
 }
 
 func (s *CommService) GetFilesChangedInCommit(repoPath, hash string) ([]string, error) {
-    output, err := utils.RunCommand("git", repoPath, "show", "--name-only", "--pretty=", hash)
-    if err != nil {
-        return nil, err
-    }
-    outputList := strings.Split(output, "\n")
+	output, err := utils.RunCommand("git", repoPath, "show", "--name-only", "--pretty=", hash)
+	if err != nil {
+		return nil, err
+	}
+	outputList := strings.Split(output, "\n")
 	return outputList, nil
+}
+
+func (s *CommService) GetFilesDiff(repoPath, hash string, files []string) ([]types.DiffResponse, error) {
+    filesDiff := []types.DiffResponse{}
+	for _, file := range files {
+		output, err := utils.RunCommand("git", repoPath, "show", "--pretty=", hash, "--", file)
+		if err != nil {
+			return nil, err
+		}
+        lines := strings.Split(output, "\n")
+        diffRes := types.DiffResponse{
+            FilePath: file,
+            CodeLines: lines,
+        }
+        filesDiff = append(filesDiff, diffRes)
+	}
+	return filesDiff, nil
 }
 
 func getShortStat(repoPath, commitHash string) (types.LogStat, error) {
