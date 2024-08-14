@@ -66,6 +66,33 @@ func (s *CommService) GetFilesDiff(repoPath, hash string, files []string) ([]typ
 	return filesDiff, nil
 }
 
+func (s *CommService) GetFileCommits(repoPath, file string) ([]types.Log, error) {
+    commitLogList := []types.Log{}
+    commitLog := types.Log{}
+    output, err := utils.RunCommand("git", repoPath, "log", "--format=%H|%an|%ad|%s", "--date=format:%b %d, %Y %I:%M %p", "--", file)
+    if err != nil {
+        return nil, err
+    }
+    commits := strings.Split(output, "\n")
+    for _, commit := range commits {
+        commitParts := strings.Split(commit, "|")
+        commitLog.Hash = commitParts[0]
+        commitLog.Author = commitParts[1]
+        commitLog.Timestamp = commitParts[2]
+        commitLog.Message = commitParts[3]
+
+        commitStat, err := getShortStat(repoPath, commitLog.Hash)
+        if err != nil {
+            return commitLogList, err
+        }
+        commitLog.FilesChanged = commitStat.FilesChanged
+        commitLog.Deletions = commitStat.Deletions
+        commitLog.Insertions = commitStat.Insertions
+        commitLogList = append(commitLogList, commitLog)
+    }
+    return commitLogList, nil
+}
+
 func getShortStat(repoPath, commitHash string) (types.LogStat, error) {
 	logStat := types.LogStat{}
 	output, err := utils.RunCommand("git", repoPath, "show", "--pretty=", "--shortstat", commitHash)

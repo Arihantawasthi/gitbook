@@ -44,6 +44,27 @@ func (h *CommitHandler) GetCommitHistory(w http.ResponseWriter, r *http.Request)
 	return nil
 }
 
+func (h *CommitHandler) GetFileCommits(w http.ResponseWriter, r *http.Request) error {
+	h.logger.Info("incoming request", "handler: GetFilesCommits", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+	repoName := r.PathValue("name") + ".git"
+	gitDir := fmt.Sprintf("--git-dir=%s/%s", h.repoPath, repoName)
+	file := r.PathValue("file")
+	commits, err := h.svc.GetFileCommits(gitDir, file)
+	if err != nil {
+		return utils.RaiseHTTPError("skill issues: error in reading file commit history", http.StatusServiceUnavailable)
+	}
+
+	jsonResponse := types.JsonResponse[[]types.Log]{
+		RequestStatus: 1,
+		StatusCode:    http.StatusOK,
+		Msg:           "Successfully retrieved the file history",
+		Data:          commits,
+	}
+	h.logger.Info("request completed", "handler: GetFileCommits", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+    utils.WriteJson(w, http.StatusOK, jsonResponse)
+	return nil
+}
+
 func (h *CommitHandler) GetCommitDetails(w http.ResponseWriter, r *http.Request) error {
 	h.logger.Info("incoming request", "handler: GetCommitDetails", r.Method, r.URL.Path, r.UserAgent(), r.Body)
 	repoName := r.PathValue("name") + ".git"
