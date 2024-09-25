@@ -20,7 +20,7 @@ type RepoObjects struct {
 	Desc     string    `json:"desc"`
 	Branches []string  `json:"branches"`
 	Data     []Objects `json:"objects"`
-    Blob     []string  `json:"blob"`
+	Blob     []string  `json:"blob"`
 }
 
 type Objects struct {
@@ -35,7 +35,13 @@ type Log struct {
 	Author    string `json:"commit_author"`
 	Message   string `json:"commit_message"`
 	Timestamp string `json:"commit_timestamp"`
-    LogStat
+	LogStat
+}
+
+type CommitHistory struct {
+	Name string `json:"name"`
+	Desc string `json:"desc"`
+	Logs []Log  `json:"logs"`
 }
 
 type LogStat struct {

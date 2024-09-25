@@ -28,16 +28,22 @@ func (h *CommitHandler) GetCommitHistory(w http.ResponseWriter, r *http.Request)
 	h.logger.Info("incoming request", "handler: GetCommitHistory", r.Method, r.URL.Path, r.UserAgent(), r.Body)
 	repoName := r.PathValue("name") + ".git"
 	gitDir := fmt.Sprintf("--git-dir=%s/%s", h.repoPath, repoName)
+	descPath := fmt.Sprintf("%s/%s/description", h.repoPath, repoName)
+	desc, err := utils.RunCommand("cat", descPath)
 	logs, err := h.svc.GetRepoCommits(gitDir, r.PathValue("branch"))
 	if err != nil {
 		return utils.RaiseHTTPError("skill issues: error in reading logs", http.StatusServiceUnavailable)
 	}
 
-	jsonResponse := types.JsonResponse[[]types.Log]{
+	jsonResponse := types.JsonResponse[types.CommitHistory]{
 		RequestStatus: 1,
 		StatusCode:    http.StatusOK,
 		Msg:           "Successfully retreived the repo logs",
-		Data:          logs,
+		Data: types.CommitHistory{
+			Name: repoName,
+			Desc: desc,
+			Logs: logs,
+		},
 	}
 	h.logger.Info("request completed", "handler: GetCommitHistory", r.Method, r.URL.Path, r.UserAgent(), r.Body)
 	utils.WriteJson(w, http.StatusOK, jsonResponse)
@@ -61,7 +67,7 @@ func (h *CommitHandler) GetFileCommits(w http.ResponseWriter, r *http.Request) e
 		Data:          commits,
 	}
 	h.logger.Info("request completed", "handler: GetFileCommits", r.Method, r.URL.Path, r.UserAgent(), r.Body)
-    utils.WriteJson(w, http.StatusOK, jsonResponse)
+	utils.WriteJson(w, http.StatusOK, jsonResponse)
 	return nil
 }
 
