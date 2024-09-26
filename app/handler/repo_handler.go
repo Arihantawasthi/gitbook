@@ -7,6 +7,7 @@ import (
 	"gitbook/utils"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type RepoHandler struct {
@@ -56,6 +57,9 @@ func (h *RepoHandler) GetRepoObjects(w http.ResponseWriter, r *http.Request) err
 	objectType := r.PathValue("type")
     repoDir := fmt.Sprintf("--git-dir=%s/%s.git", h.repoPath, repoName)
 	path := utils.ExtractRepoPath(r.URL.Path)
+    if objectType == "blob" {
+        path = strings.TrimSuffix(path, "/")
+    }
 
 	objects, err := h.svc.GetRepoObjects(repoDir, r.PathValue("branch"), path)
 	if err != nil {
