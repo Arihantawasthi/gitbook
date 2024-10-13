@@ -34,14 +34,19 @@ func (s *RepoService) GetRepoDetails(repoPath string, repoList []string) ([]type
 		if err != nil {
 			return nil, err
 		}
+        defaultBranch, err := getDefaultBranch(repoPath, name)
+        if err != nil {
+            return nil, err
+        }
 		repoDetails = append(
 			repoDetails,
 			types.RepoDetails{
-				Name:         strings.TrimSuffix(name, ".git"),
-				Desc:         desc,
-				Author:       commitSummary["author"],
-				CreatedAt:    commitSummary["firstCommit"],
-				LastCommitAt: commitSummary["lastCommit"],
+				Name:          strings.TrimSuffix(name, ".git"),
+				Desc:          desc,
+                DefaultBranch: defaultBranch,
+				Author:        commitSummary["author"],
+				CreatedAt:     commitSummary["firstCommit"],
+				LastCommitAt:  commitSummary["lastCommit"],
 			},
         )
 	}
@@ -105,4 +110,18 @@ func getFirstCommitAndAuthor(repoPath, name string) (map[string]string, error) {
 	repoDetails["firstCommit"], repoDetails["author"] = firstCommitInfo[0], firstCommitInfo[1]
 	repoDetails["lastCommit"] = strings.Split(commits[len(commits)-1], "|")[0]
 	return repoDetails, nil
+}
+
+func getDefaultBranch(repoPath, name string) (string, error) {
+    ref, err := utils.RunCommand("cat", fmt.Sprintf("%s/%s/HEAD", repoPath, name))
+    if err != nil {
+        return "", err
+    }
+
+    prefix := "ref: refs/heads/"
+    if strings.HasPrefix(ref, prefix) {
+        return strings.TrimPrefix(ref, prefix), nil
+    }
+
+    return "", fmt.Errorf("invalid ref format")
 }

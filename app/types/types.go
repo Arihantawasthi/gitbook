@@ -1,11 +1,12 @@
 package types
 
 type RepoDetails struct {
-	Name         string `json:"name"`
-	Desc         string `json:"desc"`
-	Author       string `json:"author"`
-	CreatedAt    string `json:"created_at"`
-	LastCommitAt string `json:"last_commit_at"`
+	Name          string `json:"name"`
+	Desc          string `json:"desc"`
+	DefaultBranch string `json:"defaultBranch"`
+	Author        string `json:"author"`
+	CreatedAt     string `json:"created_at"`
+	LastCommitAt  string `json:"last_commit_at"`
 }
 
 type JsonResponse[T any] struct {
