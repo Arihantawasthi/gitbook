@@ -135,8 +135,8 @@ func formatLogStat(logStat types.LogStat) types.LogStat {
 	insertions := strings.TrimPrefix(logStat.Insertions, " ")
 
 	filesChangedParts := strings.Split(filesChanged, " ")
-	insertionsParts := strings.Split(deletions, " ")
-	deletionsParts := strings.Split(insertions, " ")
+	insertionsParts := strings.Split(insertions, " ")
+	deletionsParts := strings.Split(deletions, " ")
 
 	logStat.FilesChanged = filesChangedParts[0]
 	logStat.Insertions = insertionsParts[0]
