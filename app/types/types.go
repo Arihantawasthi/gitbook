@@ -52,6 +52,6 @@ type LogStat struct {
 }
 
 type DiffResponse struct {
-	FilePath  string
-	CodeLines []string
+    FilePath  string `json:"filePath"`
+    CodeLines []string `json:"Code_lines"`
 }
