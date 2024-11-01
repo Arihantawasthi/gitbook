@@ -132,26 +132,26 @@ func (h *RepoHandler) GetRepoObjects(w http.ResponseWriter, r *http.Request) err
 	return nil
 }
 
-type Stats struct {
+type AggStats struct {
     NumOfFiles int
     NumOfLines int
     NumOfCommits int
     NumOfRepos int
-    Date string
 }
 
 func (h *RepoHandler) GetStats(w http.ResponseWriter, r *http.Request) error {
-    rows, err := storage.DBConn.Query("SELECT num_of_lines, num_of_commits, num_of_files, num_of_repos, date FROM stats")
+	h.logger.Info("incoming request", "handler: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+    rows, err := storage.DBConn.Query("SELECT sum(num_of_lines), sum(num_of_commits), sum(num_of_files), sum(num_of_repos) FROM stats")
     if err != nil {
 		h.logger.Error(err.Error(), "repo_service: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
         return utils.RaiseHTTPError("error while querying the database", http.StatusServiceUnavailable)
     }
     defer rows.Close()
 
-    var statsList []Stats
+    var statsList []AggStats
     for rows.Next() {
-        var stats Stats
-        if err := rows.Scan(&stats.NumOfLines, &stats.NumOfCommits, &stats.NumOfFiles, &stats.NumOfRepos, &stats.Date); err != nil {
+        var stats AggStats
+        if err := rows.Scan(&stats.NumOfLines, &stats.NumOfCommits, &stats.NumOfFiles, &stats.NumOfRepos); err != nil {
             h.logger.Error(err.Error(), "repo_service: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
             return utils.RaiseHTTPError("error while reading the rows", http.StatusServiceUnavailable)
         }
@@ -161,12 +161,13 @@ func (h *RepoHandler) GetStats(w http.ResponseWriter, r *http.Request) error {
         h.logger.Error(err.Error(), "repo_service: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
         return utils.RaiseHTTPError("error while reading the rows", http.StatusServiceUnavailable)
     }
-    jsonReponse := types.JsonResponse[[]Stats]{
+    jsonReponse := types.JsonResponse[[]AggStats]{
         RequestStatus: 1,
         StatusCode: http.StatusOK,
         Msg: "Successfully retrieved the stats",
         Data: statsList,
     }
+	h.logger.Info("request completed", "handler: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
     utils.WriteJson(w, http.StatusOK, jsonReponse)
     return nil
 }
