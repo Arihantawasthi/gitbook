@@ -132,42 +132,21 @@ func (h *RepoHandler) GetRepoObjects(w http.ResponseWriter, r *http.Request) err
 	return nil
 }
 
-type AggStats struct {
-    NumOfFiles int
-    NumOfLines int
-    NumOfCommits int
-    NumOfRepos int
-}
-
+// TODO: Move this query business in storage package. All the database related stuff should take place there
 func (h *RepoHandler) GetStats(w http.ResponseWriter, r *http.Request) error {
 	h.logger.Info("incoming request", "handler: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
-    rows, err := storage.DBConn.Query("SELECT sum(num_of_lines), sum(num_of_commits), sum(num_of_files), sum(num_of_repos) FROM stats")
+    statsList, err := storage.GetStats()
     if err != nil {
-		h.logger.Error(err.Error(), "repo_service: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
-        return utils.RaiseHTTPError("error while querying the database", http.StatusServiceUnavailable)
+		h.logger.Error(err.Error(), "utils: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
     }
-    defer rows.Close()
 
-    var statsList []AggStats
-    for rows.Next() {
-        var stats AggStats
-        if err := rows.Scan(&stats.NumOfLines, &stats.NumOfCommits, &stats.NumOfFiles, &stats.NumOfRepos); err != nil {
-            h.logger.Error(err.Error(), "repo_service: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
-            return utils.RaiseHTTPError("error while reading the rows", http.StatusServiceUnavailable)
-        }
-        statsList = append(statsList, stats)
-    }
-    if err := rows.Err(); err != nil {
-        h.logger.Error(err.Error(), "repo_service: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
-        return utils.RaiseHTTPError("error while reading the rows", http.StatusServiceUnavailable)
-    }
-    jsonReponse := types.JsonResponse[[]AggStats]{
-        RequestStatus: 1,
-        StatusCode: http.StatusOK,
-        Msg: "Successfully retrieved the stats",
-        Data: statsList,
-    }
+	jsonReponse := types.JsonResponse[[]types.AggStats]{
+		RequestStatus: 1,
+		StatusCode:    http.StatusOK,
+		Msg:           "Successfully retrieved the stats",
+		Data:          statsList,
+	}
 	h.logger.Info("request completed", "handler: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
-    utils.WriteJson(w, http.StatusOK, jsonReponse)
-    return nil
+	utils.WriteJson(w, http.StatusOK, jsonReponse)
+	return nil
 }
