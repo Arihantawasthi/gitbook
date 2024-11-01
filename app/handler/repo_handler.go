@@ -135,16 +135,16 @@ func (h *RepoHandler) GetRepoObjects(w http.ResponseWriter, r *http.Request) err
 // TODO: Move this query business in storage package. All the database related stuff should take place there
 func (h *RepoHandler) GetStats(w http.ResponseWriter, r *http.Request) error {
 	h.logger.Info("incoming request", "handler: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
-    statsList, err := storage.GetStats()
+    stats, err := storage.GetStats()
     if err != nil {
 		h.logger.Error(err.Error(), "utils: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
     }
 
-	jsonReponse := types.JsonResponse[[]types.AggStats]{
+	jsonReponse := types.JsonResponse[types.AggStats]{
 		RequestStatus: 1,
 		StatusCode:    http.StatusOK,
 		Msg:           "Successfully retrieved the stats",
-		Data:          statsList,
+		Data:          *stats,
 	}
 	h.logger.Info("request completed", "handler: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
 	utils.WriteJson(w, http.StatusOK, jsonReponse)
