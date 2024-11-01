@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"gitbook/app/services"
+	"gitbook/app/storage"
 	"gitbook/app/types"
 	"gitbook/utils"
 	"net/http"
@@ -129,4 +130,43 @@ func (h *RepoHandler) GetRepoObjects(w http.ResponseWriter, r *http.Request) err
 	h.logger.Info("request completed", "handler: GetRepoObjects", r.Method, r.URL.Path, r.UserAgent(), r.Body)
 	utils.WriteJson(w, http.StatusOK, jsonResponse)
 	return nil
+}
+
+type Stats struct {
+    NumOfFiles int
+    NumOfLines int
+    NumOfCommits int
+    NumOfRepos int
+    Date string
+}
+
+func (h *RepoHandler) GetStats(w http.ResponseWriter, r *http.Request) error {
+    rows, err := storage.DBConn.Query("SELECT num_of_lines, num_of_commits, num_of_files, num_of_repos, date FROM stats")
+    if err != nil {
+		h.logger.Error(err.Error(), "repo_service: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+        return utils.RaiseHTTPError("error while querying the database", http.StatusServiceUnavailable)
+    }
+    defer rows.Close()
+
+    var statsList []Stats
+    for rows.Next() {
+        var stats Stats
+        if err := rows.Scan(&stats.NumOfLines, &stats.NumOfCommits, &stats.NumOfFiles, &stats.NumOfRepos, &stats.Date); err != nil {
+            h.logger.Error(err.Error(), "repo_service: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+            return utils.RaiseHTTPError("error while reading the rows", http.StatusServiceUnavailable)
+        }
+        statsList = append(statsList, stats)
+    }
+    if err := rows.Err(); err != nil {
+        h.logger.Error(err.Error(), "repo_service: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+        return utils.RaiseHTTPError("error while reading the rows", http.StatusServiceUnavailable)
+    }
+    jsonReponse := types.JsonResponse[[]Stats]{
+        RequestStatus: 1,
+        StatusCode: http.StatusOK,
+        Msg: "Successfully retrieved the stats",
+        Data: statsList,
+    }
+    utils.WriteJson(w, http.StatusOK, jsonReponse)
+    return nil
 }
