@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2 MB
+
 type HTTPError struct {
 	StatusCode int    `json:"statusCode"`
 	Msg        string `json:"msg"`
@@ -56,6 +58,10 @@ func RunCommand(cmdName string, args ...string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+    fileSize := len(output)
+    if fileSize > MAX_FILE_SIZE {
+        return "", fmt.Errorf("file is too large to process (%d bytes)", fileSize)
+    }
 	outputStr := strings.TrimSuffix(string(output), "\n")
 	return outputStr, nil
 }

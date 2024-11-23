@@ -106,7 +106,9 @@ func (h *RepoHandler) GetRepoObjects(w http.ResponseWriter, r *http.Request) err
 		defer wg.Done()
 		rawLines, err := h.svc.GetBlobRawLines(repoDir, r.PathValue("branch"), path, objectType)
 		if err != nil {
-			errChan <- utils.RaiseHTTPError("skill issues: not able to read blob", http.StatusServiceUnavailable)
+            logMsg := fmt.Sprintf("skill issues: %s", err.Error())
+			h.logger.Error(logMsg, "utils: RunCommand", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+			errChan <- utils.RaiseHTTPError(err.Error(), http.StatusServiceUnavailable)
 		}
 		repoObjects.Blob = rawLines
 	}()
@@ -132,7 +134,6 @@ func (h *RepoHandler) GetRepoObjects(w http.ResponseWriter, r *http.Request) err
 	return nil
 }
 
-// TODO: Move this query business in storage package. All the database related stuff should take place there
 func (h *RepoHandler) GetStats(w http.ResponseWriter, r *http.Request) error {
 	h.logger.Info("incoming request", "handler: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
     stats, err := storage.GetStats()
