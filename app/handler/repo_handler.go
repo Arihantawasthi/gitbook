@@ -8,6 +8,7 @@ import (
 	"gitbook/utils"
 	"net/http"
 	"os"
+    "strconv"
 	"strings"
 	"sync"
 )
@@ -27,13 +28,30 @@ func NewRepoHandler(logger utils.Logger) *RepoHandler {
 	}
 }
 
+// TODO: Add repositories in the database itself, since we are using pagination
 func (h *RepoHandler) GetAllRepos(w http.ResponseWriter, r *http.Request) error {
+    var limit int
 	h.logger.Info("incoming request", "handler: GetAllRepos", r.Method, r.URL.Path, r.UserAgent(), r.Body)
 	repoList, err := h.svc.GetRepoList(h.repoPath)
 	if err != nil {
 		h.logger.Error(err.Error(), "repo_service: GetRepoList", r.Method, r.URL.Path, r.UserAgent(), r.Body)
 		return utils.RaiseHTTPError("cannot read the git server directory", http.StatusServiceUnavailable)
 	}
+
+    queryParam := r.URL.Query()["limit"]
+    if len(queryParam) > 0 {
+        limit, err = strconv.Atoi(queryParam[0])
+        if err != nil {
+            h.logger.Error(err.Error(), "repo_service: GetRepoList", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+            return utils.RaiseHTTPError("incorrect params", http.StatusBadRequest)
+        }
+        if limit == 0 {
+            h.logger.Error("limit is passed as 0", "repo_service: GetRepoList", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+            return utils.RaiseHTTPError("incorrect params: limit can't be zero", http.StatusBadRequest)
+        }
+    }
+    limit = min(limit, len(repoList))
+    repoList = repoList[:limit]
 
 	response, err := h.svc.GetRepoDetails(h.repoPath, repoList)
 	if err != nil {
