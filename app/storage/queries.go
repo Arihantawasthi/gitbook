@@ -22,3 +22,22 @@ func GetStats() (*types.AggStats, error) {
 
 	return &stats, nil
 }
+
+func GetRepos(limit int) (*types.RepoDetails, error) {
+    row := DBConn.QueryRow(
+        `SELECT
+            name, description, is_pinned, default_branch, author, created_at, last_commit_at
+        FROM repos WHERE visibility = "public" ORDER BY is_pinned DESC, last_commit_at DESC;
+        `,
+    )
+    var repos types.RepoDetails
+
+    if err := row.Scan(
+        &repos.Name, &repos.Desc, &repos.IsPinned, &repos.DefaultBranch,
+        &repos.Author, &repos.CreatedAt, &repos.LastCommitAt,
+    ); err != nil {
+        return nil, err
+    }
+
+    return  &repos, nil
+}
