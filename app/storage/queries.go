@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"gitbook/app/types"
 )
 
@@ -23,21 +24,34 @@ func GetStats() (*types.AggStats, error) {
 	return &stats, nil
 }
 
-func GetRepos(limit int) (*types.RepoDetails, error) {
-    row := DBConn.QueryRow(
+func GetRepos(limit, offset int) ([]types.RepoDetails, error) {
+    rows, err:= DBConn.Query(
         `SELECT
             name, description, is_pinned, default_branch, author, created_at, last_commit_at
-        FROM repos WHERE visibility = "public" ORDER BY is_pinned DESC, last_commit_at DESC;
+        FROM repos WHERE visibility = 'public' ORDER BY is_pinned DESC, last_commit_at DESC
+        LIMIT $1 OFFSET $2;
         `,
+        limit, offset,
     )
-    var repos types.RepoDetails
-
-    if err := row.Scan(
-        &repos.Name, &repos.Desc, &repos.IsPinned, &repos.DefaultBranch,
-        &repos.Author, &repos.CreatedAt, &repos.LastCommitAt,
-    ); err != nil {
+    if err != nil {
         return nil, err
     }
 
-    return  &repos, nil
+    defer rows.Close()
+
+    var repos []types.RepoDetails
+    for rows.Next() {
+        var repo types.RepoDetails
+        err := rows.Scan(
+            &repo.Name, &repo.Desc, &repo.IsPinned, &repo.DefaultBranch,
+            &repo.Author, &repo.CreatedAt, &repo.LastCommitAt,
+        )
+        if err != nil {
+            fmt.Println(err.Error())
+            continue
+        }
+        repos = append(repos, repo)
+    }
+
+    return repos, nil
 }

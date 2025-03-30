@@ -4,6 +4,7 @@ type RepoDetails struct {
 	Name          string `json:"name"`
 	Desc          string `json:"desc"`
 	DefaultBranch string `json:"default_branch"`
+	IsPinned      bool   `json:"is_pinned"`
 	Author        string `json:"author"`
 	CreatedAt     string `json:"created_at"`
 	LastCommitAt  string `json:"last_commit_at"`
@@ -52,8 +53,8 @@ type LogStat struct {
 }
 
 type DiffResponse struct {
-    FilePath  string `json:"file_path"`
-    CodeLines []string `json:"code_lines"`
+	FilePath  string   `json:"file_path"`
+	CodeLines []string `json:"code_lines"`
 }
 
 type AggStats struct {

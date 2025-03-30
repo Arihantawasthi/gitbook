@@ -8,7 +8,7 @@ import (
 	"gitbook/utils"
 	"net/http"
 	"os"
-    "strconv"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -30,41 +30,33 @@ func NewRepoHandler(logger utils.Logger) *RepoHandler {
 
 // TODO: Add repositories in the database itself, since we are using pagination
 func (h *RepoHandler) GetAllRepos(w http.ResponseWriter, r *http.Request) error {
-    var limit int
 	h.logger.Info("incoming request", "handler: GetAllRepos", r.Method, r.URL.Path, r.UserAgent(), r.Body)
-	repoList, err := h.svc.GetRepoList(h.repoPath)
-	if err != nil {
-		h.logger.Error(err.Error(), "repo_service: GetRepoList", r.Method, r.URL.Path, r.UserAgent(), r.Body)
-		return utils.RaiseHTTPError("cannot read the git server directory", http.StatusServiceUnavailable)
-	}
+    limitStr := r.URL.Query().Get("limit")
+    pageStr := r.URL.Query().Get("page")
 
-    queryParam := r.URL.Query()["limit"]
-    if len(queryParam) > 0 {
-        limit, err = strconv.Atoi(queryParam[0])
-        if err != nil {
-            h.logger.Error(err.Error(), "repo_service: GetRepoList", r.Method, r.URL.Path, r.UserAgent(), r.Body)
-            return utils.RaiseHTTPError("incorrect params", http.StatusBadRequest)
-        }
-        if limit == 0 {
-            h.logger.Error("limit is passed as 0", "repo_service: GetRepoList", r.Method, r.URL.Path, r.UserAgent(), r.Body)
-            return utils.RaiseHTTPError("incorrect params: limit can't be zero", http.StatusBadRequest)
-        }
+    limit, err := strconv.Atoi(limitStr)
+    if err != nil || limit <= 0 {
+        limit = 10
     }
-    limit = min(limit, len(repoList))
-    repoList = repoList[:limit]
+    page, err := strconv.Atoi(pageStr)
+    if err != nil || page < 1 {
+        page = 1
+    }
+    offset := (page - 1) * limit
 
-	response, err := h.svc.GetRepoDetails(h.repoPath, repoList)
-	if err != nil {
-		h.logger.Error(err.Error(), "repo_service: GetRepoDetails", r.Method, r.URL.Path, r.UserAgent(), r.Body)
-		return utils.RaiseHTTPError("skill issues: cannot fetch repo details", http.StatusServiceUnavailable)
-	}
+    repos, err := storage.GetRepos(limit, offset)
+    if err != nil {
+        h.logger.Error(err.Error(), "utils: GetRepos", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+        return err
+    }
 
-	jsonResponse := types.JsonResponse[[]types.RepoDetails]{
+    jsonResponse := types.JsonResponse[[]types.RepoDetails]{
 		RequestStatus: 1,
 		StatusCode:    http.StatusOK,
-		Msg:           "Successfully retrieved the repositories",
-		Data:          response,
-	}
+		Msg:           "Successfully retrieved the repos",
+		Data:          repos,
+    }
+
 	h.logger.Info("request completed", "handler: GetAllRepos", r.Method, r.URL.Path, r.UserAgent(), "")
 	utils.WriteJson(w, http.StatusOK, jsonResponse)
 	return nil
@@ -157,6 +149,7 @@ func (h *RepoHandler) GetStats(w http.ResponseWriter, r *http.Request) error {
     stats, err := storage.GetStats()
     if err != nil {
 		h.logger.Error(err.Error(), "utils: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+        return err
     }
 
 	jsonReponse := types.JsonResponse[types.AggStats]{

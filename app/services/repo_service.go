@@ -22,37 +22,6 @@ func (s *RepoService) GetRepoList(repoPath string) ([]string, error) {
 	return lines, nil
 }
 
-func (s *RepoService) GetRepoDetails(repoPath string, repoList []string) ([]types.RepoDetails, error) {
-	var repoDetails []types.RepoDetails
-	for _, name := range repoList {
-		descPath := fmt.Sprintf("%s/%s/description", repoPath, name)
-		desc, err := utils.RunCommand("cat", descPath)
-		if err != nil {
-			return nil, err
-		}
-		commitSummary, err := getFirstCommitAndAuthor(repoPath, name)
-		if err != nil {
-			return nil, err
-		}
-        defaultBranch, err := getDefaultBranch(repoPath, name)
-        if err != nil {
-            return nil, err
-        }
-		repoDetails = append(
-			repoDetails,
-			types.RepoDetails{
-				Name:          strings.TrimSuffix(name, ".git"),
-				Desc:          desc,
-                DefaultBranch: defaultBranch,
-				Author:        commitSummary["author"],
-				CreatedAt:     commitSummary["firstCommit"],
-				LastCommitAt:  commitSummary["lastCommit"],
-			},
-        )
-	}
-	return repoDetails, nil
-}
-
 func (s *RepoService) GetRepoObjects(repoDir, branch, path string) ([]types.Objects, error) {
     objects := []types.Objects{}
     output, err := utils.RunCommand("git", repoDir, "ls-tree", "--format=%(objecttype)|%(path)|%(objectsize)", branch, path)
