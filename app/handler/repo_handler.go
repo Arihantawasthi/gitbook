@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"database/sql"
 	"fmt"
 	"gitbook/app/services"
 	"gitbook/app/storage"
@@ -11,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 type RepoHandler struct {
@@ -146,17 +148,50 @@ func (h *RepoHandler) GetRepoObjects(w http.ResponseWriter, r *http.Request) err
 
 func (h *RepoHandler) GetStats(w http.ResponseWriter, r *http.Request) error {
 	h.logger.Info("incoming request", "handler: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
-    stats, err := storage.GetStats()
+    today := time.Now().UTC()
+    todayDate := today.Truncate(24 * time.Hour)
+
+    comparisonDate := todayDate.AddDate(0, 0, -7)
+    currentStats, err := storage.GetStatsForADate(todayDate)
     if err != nil {
-		h.logger.Error(err.Error(), "utils: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
-        return err
+		h.logger.Error(err.Error(), "current stats, utils: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+        if err != sql.ErrNoRows {
+            return err
+        }
+
+	    h.logger.Info("calling GetLatestStats", "handler: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+        currentStats, err = storage.GetLatestStats()
+        if err != nil {
+            return err
+        }
     }
+
+    comparisonStats, err := storage.GetStatsForADate(comparisonDate)
+    if err != nil {
+		h.logger.Error(err.Error(), "comparison stats, utils: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+        if err != sql.ErrNoRows {
+            return err
+        }
+	    h.logger.Info("falling back to default comparison stats", "handler: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+        comparisonStats = types.AggStats{
+            NumOfLines: currentStats.NumOfLines,
+            NumOfCommits: currentStats.NumOfCommits,
+            NumOfFiles: currentStats.NumOfFiles,
+            NumOfRepos: currentStats.NumOfRepos,
+        }
+    }
+    fmt.Println(currentStats)
+
+    currentStats.DeltaFiles = currentStats.NumOfFiles - comparisonStats.NumOfFiles
+    currentStats.DeltaLines = currentStats.NumOfLines - comparisonStats.NumOfLines
+    currentStats.DeltaRepos = currentStats.NumOfRepos - comparisonStats.NumOfRepos
+    currentStats.DeltaCommits = currentStats.NumOfCommits - comparisonStats.NumOfCommits
 
 	jsonReponse := types.JsonResponse[types.AggStats]{
 		RequestStatus: 1,
 		StatusCode:    http.StatusOK,
 		Msg:           "Successfully retrieved the stats",
-		Data:          *stats,
+		Data:          currentStats,
 	}
 	h.logger.Info("request completed", "handler: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
 	utils.WriteJson(w, http.StatusOK, jsonReponse)

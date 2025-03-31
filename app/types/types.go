@@ -62,4 +62,8 @@ type AggStats struct {
 	NumOfLines   int `json:"num_of_lines"`
 	NumOfCommits int `json:"num_of_commits"`
 	NumOfRepos   int `json:"num_of_repos"`
+	DeltaFiles   int `json:"delta_files"`
+	DeltaLines   int `json:"delta_lines"`
+	DeltaCommits int `json:"delta_commits"`
+	DeltaRepos   int `json:"delta_repos"`
 }

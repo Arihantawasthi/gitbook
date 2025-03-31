@@ -3,9 +3,10 @@ package storage
 import (
 	"fmt"
 	"gitbook/app/types"
+	"time"
 )
 
-func GetStats() (*types.AggStats, error) {
+func GetLatestStats() (types.AggStats, error) {
 	row := DBConn.QueryRow(
 		`SELECT
             num_of_lines, num_of_commits,
@@ -18,10 +19,30 @@ func GetStats() (*types.AggStats, error) {
 		&stats.NumOfLines, &stats.NumOfCommits,
 		&stats.NumOfFiles, &stats.NumOfRepos,
 	); err != nil {
-		return nil, err
+		return stats, err
 	}
 
-	return &stats, nil
+	return stats, nil
+}
+
+func GetStatsForADate(date time.Time) (types.AggStats, error) {
+    row := DBConn.QueryRow(
+        `SELECT
+            num_of_lines, num_of_commits, num_of_files, num_of_repos
+        FROM stats WHERE date = $1;
+        `,
+        date,
+    )
+    var stats types.AggStats
+    err := row.Scan(
+		&stats.NumOfLines, &stats.NumOfCommits,
+		&stats.NumOfFiles, &stats.NumOfRepos,
+    )
+    if err != nil {
+        return stats, err
+    }
+
+    return stats, nil
 }
 
 func GetRepos(limit, offset int) ([]types.RepoDetails, error) {
