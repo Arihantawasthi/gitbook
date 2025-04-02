@@ -197,3 +197,34 @@ func (h *RepoHandler) GetStats(w http.ResponseWriter, r *http.Request) error {
 	utils.WriteJson(w, http.StatusOK, jsonReponse)
 	return nil
 }
+
+func (h *RepoHandler) UpdateLastCommit(w http.ResponseWriter, r *http.Request) error {
+    h.logger.Info("incoming request", "handler: UpdateLastCommit", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+    payload, err := utils.ReadJson[types.UpdateLastCommitReq](r)
+    if err != nil {
+        h.logger.Error(err.Error(), "hander: UpdateLastCommit; Error in parsing request", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+        return err
+    }
+
+    lastCommitAt, err := time.Parse(time.RFC3339, payload.LastCommitAt)
+    if err != nil {
+        h.logger.Error(err.Error(), "hander: UpdateLastCommit; Invalid date format", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+        return err
+    }
+
+    err = storage.UpdateLastCommit(payload.RepoName, payload.AuthorName, lastCommitAt)
+    if err != nil {
+        h.logger.Error(err.Error(), "hander: UpdateLastCommit; Failed to update timestamp", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+        return err
+    }
+
+	jsonResponse := types.JsonResponse[string]{
+		RequestStatus: 1,
+		StatusCode:    http.StatusOK,
+		Msg:           "Successfully updated last commit timestamp",
+		Data:          "Commit time updated successfully",
+	}
+	utils.WriteJson(w, http.StatusOK, jsonResponse)
+	h.logger.Info("request completed", "handler: GetStats", r.Method, r.URL.Path, r.UserAgent(), r.Body)
+    return nil
+}

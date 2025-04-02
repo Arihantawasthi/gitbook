@@ -67,3 +67,9 @@ type AggStats struct {
 	DeltaCommits int `json:"delta_commits"`
 	DeltaRepos   int `json:"delta_repos"`
 }
+
+type UpdateLastCommitReq struct {
+	RepoName     string `json:"repo_name"`
+	AuthorName   string `json:"repo_author"`
+	LastCommitAt string `json:"last_commit_at"`
+}

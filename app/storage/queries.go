@@ -76,3 +76,15 @@ func GetRepos(limit, offset int) ([]types.RepoDetails, error) {
 
     return repos, nil
 }
+
+func UpdateLastCommit(repoName, authorName string, lastCommitAt time.Time) error {
+    query := `
+        UPDATE repos
+        SET last_commit_at = $1
+        WHERE name = $2 and author = $3;
+    `
+
+    _, err := DBConn.Exec(query, lastCommitAt, repoName, authorName)
+
+    return err
+}

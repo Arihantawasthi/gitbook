@@ -2,8 +2,10 @@ package utils
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"gitbook/app/types"
+	"io"
 	"net/http"
 	"os/exec"
 	"strings"
@@ -50,6 +52,29 @@ func WriteJson(w http.ResponseWriter, statusCode int, v any) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(statusCode)
 	json.NewEncoder(w).Encode(v)
+}
+
+func ReadJson[T any](r *http.Request) (T, error) {
+    var reqData T
+
+    const maxBodySize = 1 << 20 // 1MB
+    r.Body = http.MaxBytesReader(nil, r.Body, maxBodySize)
+
+    decoder := json.NewDecoder(r.Body)
+    decoder.DisallowUnknownFields()
+
+    if err := decoder.Decode(&reqData); err != nil {
+        if errors.Is(err, io.EOF) {
+            return reqData, errors.New("empty request body")
+        }
+        return reqData, err
+    }
+
+    if decoder.More() {
+        return reqData, errors.New("request body contains extra data")
+    }
+
+    return reqData, nil
 }
 
 func RunCommand(cmdName string, args ...string) (string, error) {
