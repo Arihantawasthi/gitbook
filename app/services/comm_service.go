@@ -15,7 +15,7 @@ func NewCommService() CommService {
 func (s *CommService) GetRepoCommits(repoPath, branch string) ([]types.Log, error) {
 	commitLogList := []types.Log{}
 	commitLog := types.Log{}
-	output, err := utils.RunCommand("git", repoPath, "log", "--format=%H|%an|%ad|%s", "--date=format:%b %d, %Y %I:%M %p", branch)
+	output, err := utils.RunCommand("git", repoPath, "log", "--format=%H|%an|%ct|%s", "--date=iso8601-strict", branch)
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +24,10 @@ func (s *CommService) GetRepoCommits(repoPath, branch string) ([]types.Log, erro
 		commitParts := strings.Split(commit, "|")
 		commitLog.Hash = commitParts[0]
 		commitLog.Author = commitParts[1]
-		commitLog.Timestamp = commitParts[2]
+        commitLog.Timestamp, err = utils.ConvertUnixTSToIso(commitParts[2])
+        if err != nil {
+            return commitLogList, err
+        }
 		commitLog.Message = commitParts[3]
 
 		commitStat, err := getShortStat(repoPath, commitLog.Hash)

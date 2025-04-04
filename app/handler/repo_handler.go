@@ -206,13 +206,16 @@ func (h *RepoHandler) UpdateLastCommit(w http.ResponseWriter, r *http.Request) e
         return err
     }
 
-    lastCommitAt, err := time.Parse(time.RFC3339, payload.LastCommitAt)
+    lastCommitAt, err := strconv.ParseInt(payload.LastCommitAt, 10, 64)
+    fmt.Println(lastCommitAt)
+    commitTime := time.Unix(lastCommitAt, 0).UTC()
     if err != nil {
         h.logger.Error(err.Error(), "hander: UpdateLastCommit; Invalid date format", r.Method, r.URL.Path, r.UserAgent(), r.Body)
         return err
     }
+    fmt.Println(commitTime)
 
-    err = storage.UpdateLastCommit(payload.RepoName, payload.AuthorName, lastCommitAt)
+    err = storage.UpdateLastCommit(payload.RepoName, payload.AuthorName, commitTime)
     if err != nil {
         h.logger.Error(err.Error(), "hander: UpdateLastCommit; Failed to update timestamp", r.Method, r.URL.Path, r.UserAgent(), r.Body)
         return err

@@ -8,7 +8,9 @@ import (
 	"io"
 	"net/http"
 	"os/exec"
+	"strconv"
 	"strings"
+	"time"
 )
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2 MB
@@ -103,4 +105,15 @@ func ExtractRepoPath(path string) string {
         }
     }
     return "."
+}
+
+func ConvertUnixTSToIso(unixTimestamp string) (string, error) {
+    tInt, err := strconv.ParseInt(unixTimestamp, 10, 64)
+    if err != nil {
+        return "", err
+    }
+    iUtc := time.Unix(tInt, 0).UTC()
+    iso := iUtc.Format(time.RFC3339)
+
+    return iso, nil
 }
